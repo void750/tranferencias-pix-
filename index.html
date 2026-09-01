@@ -2,190 +2,169 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PIX</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagamento PIX</title>
 <style>
 body{
-  background:#080808;
-  color:white;
-  font-family:Arial;
-  text-align:center;
-  padding:20px
+    margin:0;
+    padding:30px 15px;
+    background:#080808;
+    color:white;
+    font-family:Arial,sans-serif;
+    text-align:center;
+}
+h1{
+    color:#00ff66;
 }
 button{
-  margin:5px;
-  padding:15px 20px;
-  border:0;
-  border-radius:10px;
-  background:#16a34a;
-  color:white;
-  font-weight:bold;
-  font-size:16px;
-  cursor:pointer
+    display:inline-block;
+    margin:6px;
+    padding:15px 22px;
+    border:0;
+    border-radius:10px;
+    background:#00b84f;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
 }
-button:hover{background:#22c55e}
-#resultado{margin-top:25px}
-img{
-  width:250px;
-  background:white;
-  padding:10px;
-  border-radius:10px
+#pagamento{
+    display:none;
+    margin-top:30px;
+}
+#qr{
+    width:250px;
+    height:250px;
+    background:white;
+    padding:10px;
+    border-radius:10px;
 }
 textarea{
-  width:95%;
-  max-width:600px;
-  height:100px;
-  margin-top:15px;
-  background:#111;
-  color:white;
-  padding:10px
+    width:90%;
+    max-width:500px;
+    height:100px;
+    margin-top:15px;
+    background:#111;
+    color:#00ff66;
+    border:1px solid #00ff66;
+    border-radius:8px;
+    padding:10px;
+}
+.copiar{
+    display:block;
+    margin:15px auto;
 }
 </style>
 </head>
 <body>
 <h1>💰 PAGAMENTO PIX</h1>
-<p>Escolha o valor</p>
+<p>Escolha o valor:</p>
 <div id="botoes"></div>
-<div id="resultado"></div>
+<div id="pagamento">
+<h2 id="valor"></h2>
+<img id="qr" alt="QR Code PIX">
+<br>
+<textarea id="codigo" readonly></textarea>
+<button class="copiar" onclick="copiarPix()">
+    📋 COPIAR PIX
+</button>
+</div>
 <script>
-/* =========================
-   DADOS DO PIX
-========================= */
-const chave =
-"8217f3e7-bb4b-4fb4-adcd-c4df2d196de6";
-const nome =
-"CASH FARMEM";
-const cidade =
-"SAO PAULO";
-const valores = [
-250,300,500,600,700,800,900,1000,1500,2000,3000
+const CHAVE = "8217f3e7-bb4b-4fb4-adcd-c4df2d196de6";
+const NOME = "CASH FARMEM";
+const CIDADE = "SAO PAULO";
+const VALORES = [
+    250,
+    300,
+    500,
+    600,
+    700,
+    800,
+    900,
+    1000,
+    1500,
+    2000,
+    3000
 ];
-/* =========================
-   CAMPO TLV
-========================= */
-function campo(id, valor){
-  return id +
+function campo(id,valor){
+    return id +
     String(valor.length).padStart(2,"0") +
     valor;
 }
-/* =========================
-   CRC16-CCITT
-   POLINÔMIO 1021
-   INICIAL FFFF
-========================= */
 function crc16(texto){
-  let crc = 0xFFFF;
-  for(let i=0;i<texto.length;i++){
-    crc ^= texto.charCodeAt(i) << 8;
-    for(let j=0;j<8;j++){
-      if(crc & 0x8000){
-        crc =
-          ((crc << 1) ^ 0x1021) & 0xFFFF;
-      }else{
-        crc =
-          (crc << 1) & 0xFFFF;
-      }
+    let crc = 0xFFFF;
+    for(let i=0;i<texto.length;i++){
+        crc ^= texto.charCodeAt(i) << 8;
+        for(let j=0;j<8;j++){
+            if(crc & 0x8000){
+                crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+            }else{
+                crc = (crc << 1) & 0xFFFF;
+            }
+        }
     }
-  }
-  return crc
+    return crc
     .toString(16)
     .toUpperCase()
     .padStart(4,"0");
 }
-/* =========================
-   GERAR PIX
-========================= */
 function gerarPix(valor){
-  const contaPix =
-    campo("00","br.gov.bcb.pix") +
-    campo("01",chave);
-  let pix =
-    campo("00","01") +
-    campo("26",contaPix) +
-    campo("52","0000") +
-    campo("53","986") +
-    campo("54",valor.toFixed(2)) +
-    campo("58","BR") +
-    campo("59",nome) +
-    campo("60",cidade) +
-    campo(
-      "62",
-      campo("05","***")
-    );
-  /*
-    6304 é incluído no cálculo
-    do CRC conforme o BR Code.
-  */
-  pix += "6304";
-  pix += crc16(pix);
-  return pix;
+    const chavePix =
+        campo("00","br.gov.bcb.pix") +
+        campo("01",CHAVE);
+    let pix =
+        campo("00","01") +
+        campo("26",chavePix) +
+        campo("52","0000") +
+        campo("53","986") +
+        campo("54",valor.toFixed(2)) +
+        campo("58","BR") +
+        campo("59",NOME) +
+        campo("60",CIDADE) +
+        campo(
+            "62",
+            campo("05","***")
+        );
+    pix += "6304";
+    pix += crc16(pix);
+    return pix;
 }
-/* =========================
-   MOSTRAR PAGAMENTO
-========================= */
 function mostrar(valor){
-  const pix = gerarPix(valor);
-  document.getElementById("resultado").innerHTML = `
-    <h2>
-      R$ ${valor.toLocaleString(
-        "pt-BR",
-        {minimumFractionDigits:2}
-      )}
-    </h2>
-    <img
-      src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(pix)}"
-      alt="QR Code PIX"
-    >
-    <br><br>
-    <textarea id="codigo" readonly>${pix}</textarea>
-<br>
-<button onclick="copiar()">
-  📋 COPIAR PIX
-</button>
-
-`;
+    const pix = gerarPix(valor);
+    document.getElementById("valor").innerHTML =
+        "Pagar R$ " +
+        valor.toLocaleString("pt-BR",{
+            minimumFractionDigits:2
+        });
+    document.getElementById("codigo").value = pix;
+    document.getElementById("qr").src =
+        "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" +
+        encodeURIComponent(pix);
+    document.getElementById("pagamento").style.display = "block";
+    window.scrollTo({
+        top:document.body.scrollHeight,
+        behavior:"smooth"
+    });
 }
-
-/* =========================
-COPIAR
-========================= */
-
-function copiar(){
-
-const campo =
-document.getElementById(“codigo”);
-
-navigator.clipboard
-.writeText(campo.value)
-.then(() => {
-
-  alert("✅ Pix Copia e Cola copiado!");
-});
-
+function copiarPix(){
+    const codigo =
+        document.getElementById("codigo");
+    navigator.clipboard.writeText(codigo.value);
+    alert("✅ PIX COPIADO!");
 }
-
-/* =========================
-CRIAR OS 11 BOTÕES
-========================= */
-
-valores.forEach(valor => {
-
-const botao =
-document.createElement(“button”);
-
-botao.textContent =
-“R$ “ +
-valor.toLocaleString(“pt-BR”);
-
-botao.onclick =
-() => mostrar(valor);
-
-document
-.getElementById(“botoes”)
-.appendChild(botao);
-
+VALORES.forEach(function(valor){
+    const botao =
+        document.createElement("button");
+    botao.innerHTML =
+        "R$ " +
+        valor.toLocaleString("pt-BR");
+    botao.onclick =
+        function(){
+            mostrar(valor);
+        };
+    document
+        .getElementById("botoes")
+        .appendChild(botao);
 });
-
 </script>
 </body>
 </html>
