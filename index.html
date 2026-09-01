@@ -6,165 +6,161 @@
 <title>Pagamento PIX</title>
 <style>
 body{
-    margin:0;
-    padding:30px 15px;
     background:#080808;
     color:white;
     font-family:Arial,sans-serif;
     text-align:center;
+    padding:30px 15px;
 }
 h1{
     color:#00ff66;
 }
+.valores{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+    max-width:600px;
+    margin:auto;
+}
 button{
-    display:inline-block;
-    margin:6px;
-    padding:15px 22px;
-    border:0;
-    border-radius:10px;
     background:#00b84f;
     color:white;
-    font-size:16px;
+    border:0;
+    border-radius:10px;
+    padding:15px 22px;
+    font-size:17px;
     font-weight:bold;
+    cursor:pointer;
 }
-#pagamento{
-    display:none;
+button:hover{
+    background:#00ff66;
+    color:#000;
+}
+#resultado{
     margin-top:30px;
 }
 #qr{
     width:250px;
-    height:250px;
     background:white;
     padding:10px;
     border-radius:10px;
 }
 textarea{
+    display:block;
     width:90%;
-    max-width:500px;
+    max-width:550px;
     height:100px;
-    margin-top:15px;
+    margin:20px auto 10px;
     background:#111;
     color:#00ff66;
     border:1px solid #00ff66;
     border-radius:8px;
     padding:10px;
 }
-.copiar{
-    display:block;
-    margin:15px auto;
+#copiar{
+    margin-top:10px;
 }
 </style>
 </head>
 <body>
 <h1>💰 PAGAMENTO PIX</h1>
 <p>Escolha o valor:</p>
-<div id="botoes"></div>
-<div id="pagamento">
-<h2 id="valor"></h2>
-<img id="qr" alt="QR Code PIX">
-<br>
-<textarea id="codigo" readonly></textarea>
-<button class="copiar" onclick="copiarPix()">
-    📋 COPIAR PIX
-</button>
+<div class="valores">
+
+R$ 250
+
+R$ 300
+
+R$ 500
+
+R$ 600
+
+R$ 700
+
+R$ 800
+
+R$ 900
+
+R$ 1.000
+
+R$ 1.500
+
+R$ 2.000
+
+R$ 3.000
+
 </div>
+<div id="resultado"></div>
 <script>
-const CHAVE = "8217f3e7-bb4b-4fb4-adcd-c4df2d196de6";
-const NOME = "CASH FARMEM";
-const CIDADE = "SAO PAULO";
-const VALORES = [
-    250,
-    300,
-    500,
-    600,
-    700,
-    800,
-    900,
-    1000,
-    1500,
-    2000,
-    3000
-];
+const CHAVE =
+"8217f3e7-bb4b-4fb4-adcd-c4df2d196de6";
 function campo(id,valor){
-    return id +
-    String(valor.length).padStart(2,"0") +
-    valor;
+return id +
+String(valor.length).padStart(2,"0") +
+valor;
 }
 function crc16(texto){
-    let crc = 0xFFFF;
-    for(let i=0;i<texto.length;i++){
-        crc ^= texto.charCodeAt(i) << 8;
-        for(let j=0;j<8;j++){
-            if(crc & 0x8000){
-                crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
-            }else{
-                crc = (crc << 1) & 0xFFFF;
-            }
-        }
-    }
-    return crc
-    .toString(16)
-    .toUpperCase()
-    .padStart(4,"0");
+let crc=0xFFFF;
+for(let i=0;i<texto.length;i++){
+crc ^= texto.charCodeAt(i)<<8;
+for(let j=0;j<8;j++){
+if(crc&0x8000){
+crc=((crc<<1)^0x1021)&0xFFFF;
+}else{
+crc=(crc<<1)&0xFFFF;
 }
-function gerarPix(valor){
-    const chavePix =
-        campo("00","br.gov.bcb.pix") +
-        campo("01",CHAVE);
-    let pix =
-        campo("00","01") +
-        campo("26",chavePix) +
-        campo("52","0000") +
-        campo("53","986") +
-        campo("54",valor.toFixed(2)) +
-        campo("58","BR") +
-        campo("59",NOME) +
-        campo("60",CIDADE) +
-        campo(
-            "62",
-            campo("05","***")
-        );
-    pix += "6304";
-    pix += crc16(pix);
-    return pix;
 }
-function mostrar(valor){
-    const pix = gerarPix(valor);
-    document.getElementById("valor").innerHTML =
-        "Pagar R$ " +
-        valor.toLocaleString("pt-BR",{
-            minimumFractionDigits:2
-        });
-    document.getElementById("codigo").value = pix;
-    document.getElementById("qr").src =
-        "https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" +
-        encodeURIComponent(pix);
-    document.getElementById("pagamento").style.display = "block";
-    window.scrollTo({
-        top:document.body.scrollHeight,
-        behavior:"smooth"
-    });
 }
-function copiarPix(){
-    const codigo =
-        document.getElementById("codigo");
-    navigator.clipboard.writeText(codigo.value);
-    alert("✅ PIX COPIADO!");
+return crc.toString(16)
+.toUpperCase()
+.padStart(4,"0");
 }
-VALORES.forEach(function(valor){
-    const botao =
-        document.createElement("button");
-    botao.innerHTML =
-        "R$ " +
-        valor.toLocaleString("pt-BR");
-    botao.onclick =
-        function(){
-            mostrar(valor);
-        };
-    document
-        .getElementById("botoes")
-        .appendChild(botao);
-});
+function pix(valor){
+let conta=
+campo("00","br.gov.bcb.pix")+
+campo("01",CHAVE);
+let codigo=
+campo("00","01")+
+campo("26",conta)+
+campo("52","0000")+
+campo("53","986")+
+campo("54",valor.toFixed(2))+
+campo("58","BR")+
+campo("59","CASH FARMEM")+
+campo("60","SAO PAULO")+
+campo("62",campo("05","***"));
+codigo+="6304";
+codigo+=crc16(codigo);
+document.getElementById("resultado").innerHTML=
+"<h2>R$ "+
+valor.toLocaleString("pt-BR",{minimumFractionDigits:2})+
+"</h2>"+
+"<img id='qr' src='https://api.qrserver.com/v1/create-qr-code/?size=500x500&data="+
+encodeURIComponent(codigo)+
+"'>"+
+"<textarea id='codigo' readonly>"+
+codigo+
+"</textarea>"+
+
+“”+
+“📋 COPIAR PIX”+
+“”;
+
+}
+
+function copiar(){
+
+let campo=document.getElementById(“codigo”);
+
+campo.select();
+
+navigator.clipboard.writeText(campo.value);
+
+alert(“✅ Pix copiado!”);
+
+}
+
 </script>
 </body>
 </html>
