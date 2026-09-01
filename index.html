@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Mafia — Pagamento Pix</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, #10251d 0%, #050807 45%, #020303 100%);
+  color: #eafff3;
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.container {
+  width: 100%;
+  max-width: 620px;
+}
+
+.card {
+  background: rgba(7, 15, 12, 0.96);
+  border: 1px solid #21ff88;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow:
+    0 0 25px rgba(33, 255, 136, .18),
+    inset 0 0 30px rgba(33, 255, 136, .03);
+}
+
+.logo {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 900;
+  color: #45ff9a;
+  letter-spacing: 2px;
+  text-shadow: 0 0 15px rgba(69,255,154,.5);
+}
+
+.subtitle {
+  text-align: center;
+  color: #9db5a8;
+  margin-top: 8px;
+  margin-bottom: 25px;
+}
+
+.values {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.value-btn {
+  border: 1px solid #21ff88;
+  background: #09130f;
+  color: #45ff9a;
+  padding: 18px 10px;
+  border-radius: 12px;
+  font-size: 19px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.value-btn:hover,
+.value-btn.active {
+  background: #21ff88;
+  color: #031009;
+  box-shadow: 0 0 20px rgba(33,255,136,.35);
+  transform: translateY(-2px);
+}
+
+.payment {
+  display: none;
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(69,255,154,.25);
+}
+
+.payment.show {
+  display: block;
+}
+
+.selected {
+  text-align: center;
+  font-size: 27px;
+  font-weight: bold;
+  color: #45ff9a;
+  margin-bottom: 20px;
+}
+
+.qrcode {
+  width: 230px;
+  height: 230px;
+  margin: 0 auto 20px;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.qrcode img,
+.qrcode canvas {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.label {
+  display: block;
+  color: #8fa99b;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.pix-code {
+  width: 100%;
+  min-height: 110px;
+  resize: none;
+  background: #030806;
+  border: 1px solid #193b2b;
+  border-radius: 10px;
+  color: #b9ffd5;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.copy-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  background: #21ff88;
+  color: #031009;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  filter: brightness(1.1);
+}
+
+.info {
+  margin-top: 20px;
+  text-align: center;
+  color: #81988b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.status {
+  text-align: center;
+  margin-top: 12px;
+  color: #45ff9a;
+  min-height: 20px;
+  font-size: 14px;
+}
+
+@media (max-width: 450px) {
+  .card {
+    padding: 20px;
+  }
+
+  .logo {
+    font-size: 25px;
+  }
+
+  .values {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="card">
+
+    <div class="logo">☠ CYBER MAFIA</div>
+
+    <div class="subtitle">
+      Escolha o valor para gerar seu pagamento Pix
+    </div>
+
+    <div class="values">
+
+      <button class="value-btn" onclick="selecionarValor(25, this)">
+        R$ 25
+      </button>
+
+      <button class="value-btn" onclick="selecionarValor(50, this)">
+        R$ 50
+      </button>
+
+      <button class="value-btn" onclick="selecionarValor(100, this)">
+        R$ 100
+      </button>
+
+      <button class="value-btn" onclick="selecionarValor(1000, this)">
+        R$ 1.000
+      </button>
+
+    </div>
+
+    <div id="payment" class="payment">
+
+      <div id="selectedValue" class="selected"></div>
+
+      <div id="qrcode" class="qrcode"></div>
+
+      <span class="label">Pix Copia e Cola:</span>
+
+      <textarea
+        id="pixCode"
+        class="pix-code"
+        readonly
+      ></textarea>
+
+      <button class="copy-btn" onclick="copiarPix()">
+        📋 COPIAR PIX COPIA E COLA
+      </button>
+
+      <div id="status" class="status"></div>
+
+      <div class="info">
+        Recebedor: <strong>Cash Farmem</strong><br>
+        Cidade: <strong>São Paulo</strong><br><br>
+        Após realizar o pagamento, aguarde a confirmação do recebimento.
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+/* =========================================================
+   DADOS DO PIX
+   ========================================================= */
+
+const PIX_KEY = "8217f3e7-bb4b-4fb4-adcd-c4df2d196de6";
+
+const PIX_NAME = "Cash Farmem";
+
+const PIX_CITY = "SAO PAULO";
+
+
+/* =========================================================
+   FORMATA CAMPO PIX
+   ========================================================= */
+
+function campo(id, valor) {
+
+  return (
+    String(id).padStart(2, "0") +
+    String(valor.length).padStart(2, "0") +
+    valor
+  );
+
+}
+
+
+/* =========================================================
+   CRC16-CCITT
+   ========================================================= */
+
+function crc16(payload) {
+
+  let crc = 0xFFFF;
+
+  for (let i = 0; i < payload.length; i++) {
+
+    crc ^= payload.charCodeAt(i) << 8;
+
+    for (let j = 0; j < 8; j++) {
+
+      if ((crc & 0x8000) !== 0) {
+
+        crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+
+      } else {
+
+        crc = (crc << 1) & 0xFFFF;
+
+      }
+
+    }
+
+  }
+
+  return crc
+    .toString(16)
+    .toUpperCase()
+    .padStart(4, "0");
+
+}
+
+
+/* =========================================================
+   GERA PIX COPIA E COLA
+   ========================================================= */
+
+function gerarPix(valor) {
+
+  const merchantAccountInfo =
+    campo(00, "BR.GOV.BCB.PIX") +
+    campo(01, PIX_KEY);
+
+  let payload = "";
+
+  payload += campo(00, "01");
+
+  payload += campo(26, merchantAccountInfo);
+
+  payload += campo(52, "0000");
+
+  payload += campo(53, "986");
+
+  payload += campo(54, Number(valor).toFixed(2));
+
+  payload += campo(58, "BR");
+
+  payload += campo(59, PIX_NAME);
+
+  payload += campo(60, PIX_CITY);
+
+  payload += campo(62, campo(05, "***"));
+
+  payload += "6304";
+
+  payload += crc16(payload);
+
+  return payload;
+
+}
+
+
+/* =========================================================
+   SELECIONAR VALOR
+   ========================================================= */
+
+function selecionarValor(valor, botao) {
+
+  document
+    .querySelectorAll(".value-btn")
+    .forEach(btn => btn.classList.remove("active"));
+
+  botao.classList.add("active");
+
+  const pix = gerarPix(valor);
+
+  document.getElementById("payment")
+    .classList.add("show");
+
+  document.getElementById("selectedValue")
+    .textContent =
+      "Pagamento de R$ " +
+      Number(valor).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2
+      });
+
+  document.getElementById("pixCode")
+    .value = pix;
+
+  document.getElementById("status")
+    .textContent = "";
+
+  const qr = document.getElementById("qrcode");
+
+  qr.innerHTML = "";
+
+  new QRCode(qr, {
+
+    text: pix,
+
+    width: 205,
+
+    height: 205,
+
+    correctLevel: QRCode.CorrectLevel.M
+
+  });
+
+}
+
+
+/* =========================================================
+   COPIAR PIX
+   ========================================================= */
+
+async function copiarPix() {
+
+  const campoPix =
+    document.getElementById("pixCode");
+
+  const codigo = campoPix.value;
+
+  if (!codigo) {
+
+    return;
+
+  }
+
+  try {
+
+    await navigator.clipboard.writeText(codigo);
+
+    document.getElementById("status")
+      .textContent =
+      "✓ Pix Copia e Cola copiado!";
+
+  } catch (erro) {
+
+    campoPix.select();
+
+    document.execCommand("copy");
+
+    document.getElementById("status")
+      .textContent =
+      "✓ Pix Copia e Cola copiado!";
+
+  }
+
+}
+
+</script>
+
+</body>
+</html>
